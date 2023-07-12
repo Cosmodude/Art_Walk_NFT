@@ -2,3 +2,4 @@
 node_modules
 cadence/transactions
 build
+*.gitkeep
