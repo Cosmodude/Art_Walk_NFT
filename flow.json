@@ -19,16 +19,18 @@
 			}
 		},
 		"FungibleToken": {
-			"source": "",
+			"source": "./cadence/contracts/FungibleToken.cdc",
 			"aliases": {
-				"emulator": "ee82856bf20e2aa6"
+				"emulator": "ee82856bf20e2aa6",
+				"testnet": "0x6223108937e32f96"
 			}
 		},
-		"InterfaceNFT": "./cadence/contracts/INFT.cdc",
+		
 		"MetadataViews": {
-			"source": "",
+			"source": "./cadence/contracts/MetadataViews.cdc",
 			"aliases": {
-				"emulator": "f8d6e0586b0a20c7"
+				"emulator": "f8d6e0586b0a20c7",
+				"testnet": "0x6223108937e32f96"
 			}
 		},
 		"NFTStorefront": {
@@ -44,9 +46,30 @@
 			}
 		},
 		"NonFungibleToken": {
-			"source": "",
+			"source": "./cadence/contracts/NonFungibleToken.cdc",
 			"aliases": {
-				"emulator": "f8d6e0586b0a20c7"
+			  "emulator": "0xf8d6e0586b0a20c7",
+			  "testnet": "0x6223108937e32f96",
+			  "mainnet": "0x1d7e57aa55817448"
+			}
+		},
+		"InterfaceNFT": "./cadence/contracts/INFT.cdc",
+		"ViewResolver": {
+			"source": "./cadence/contracts/ViewResolver.cdc",
+			"aliases": {
+				"testnet": "0x6223108937e32f96"
+			}
+		},
+		"NFTForwarding": {
+			"source": "./cadence/contracts/NFTForwarding.cdc",
+			"aliases": {
+				"testnet": "0x6223108937e32f96"
+			}
+		},
+		"ArtWalk_NFT":{
+			"source": "./cadence/contracts/ArtWalk_NFT.cdc",
+			"aliases": {
+				"testnet": "0x6223108937e32f96"
 			}
 		}
 	},
@@ -57,7 +80,7 @@
 	},
 	"accounts": {
 		"Cosmodude": {
-			"address": "54855e3324b1e5dc",
+			"address": "6223108937e32f96",
 			"key": {
 				"type": "file",
 				"location": "Cosmodude.pkey"
@@ -66,6 +89,18 @@
 		"emulator-account": {
 			"address": "f8d6e0586b0a20c7",
 			"key": "6d12eebfef9866c9b6fa92b97c6e705c26a1785b1e7944da701fc545a51d4673"
+		}
+	},
+	"deployments": {
+		"testnet": {
+			"Cosmodude": [
+				"NonFungibleToken",
+       	 		"ViewResolver",
+        		"MetadataViews",
+        		"FungibleToken",
+        		"NFTForwarding",
+				"ArtWalk_NFT"
+			]
 		}
 	}
 }
