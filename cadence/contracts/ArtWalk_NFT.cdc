@@ -16,7 +16,7 @@ pub contract ArtWalk: NonFungibleToken {
     pub event ContractInitialized()
     pub event Withdraw(id: UInt64, from: Address?)
     pub event Deposit(id: UInt64, to: Address?)
-    pub event Minted(id: UInt64, kind: UInt8, rarity: UInt8)
+    pub event Minted(id: UInt64, kind: UInt8, difficulty: UInt8)
     pub event ImagesAddedForNewKind(kind: UInt8)
 
     // Named Paths
@@ -32,8 +32,8 @@ pub contract ArtWalk: NonFungibleToken {
         pub case expert
     }
 
-    pub fun difficultyToString(_ rarity: Difficulty): String {
-        switch rarity {
+    pub fun difficultyToString(_ difficulty: Difficulty): String {
+        switch difficulty {
             case Difficulty.easy:
                 return "Easy"
             case Difficulty.normal:
@@ -72,18 +72,18 @@ pub contract ArtWalk: NonFungibleToken {
         return ""
     }
 
-    // Mapping from item (kind, difficulty) -> IPFS image CID
+    // Mapping from walk (kind, difficulty) -> IPFS image CID
     //
     access(self) var images: {Kind: {Difficulty: String}}
 
     // Mapping from difficulty -> price
     //
-    access(self) var itemRarityPriceMap: {Difficulty: UFix64}
+    access(self) var walkDifficultyPriceMap: {Difficulty: UFix64}
 
-    // Return the initial sale price for an item of this difficulty.
+    // Return the initial sale price for an walk of this difficulty.
     //
-    pub fun getItemPrice(rarity: Difficulty): UFix64 {
-        return self.itemRarityPriceMap[rarity]!
+    pub fun getWalkPrice(difficulty: Difficulty): UFix64 {
+        return self.walkDifficultyPriceMap[difficulty]!
     }
     
     // An ArtWalk as an NFT
@@ -92,14 +92,14 @@ pub contract ArtWalk: NonFungibleToken {
         pub let id: UInt64
 
         pub fun name(): String {
-            return ArtWalk.difficultyToString(self.rarity)
+            return ArtWalk.difficultyToString(self.difficulty)
                 .concat(" ")
                 .concat(ArtWalk.kindToString(self.kind))
         }
         
         pub fun description(): String {
             return "A "
-                .concat(ArtWalk.difficultyToString(self.rarity).toLower())
+                .concat(ArtWalk.difficultyToString(self.difficulty).toLower())
                 .concat(" ")
                 .concat(ArtWalk.kindToString(self.kind).toLower())
                 .concat(" with serial number ")
@@ -107,7 +107,7 @@ pub contract ArtWalk: NonFungibleToken {
         }
 
         pub fun imageCID(): String {
-            return ArtWalk.images[self.kind]![self.rarity]!
+            return ArtWalk.images[self.kind]![self.difficulty]!
         }
 
         pub fun thumbnail(): MetadataViews.IPFSFile {
@@ -121,20 +121,20 @@ pub contract ArtWalk: NonFungibleToken {
         pub let kind: Kind
 
         // The walk difficulty (e.g. Normal)
-        pub let rarity: Difficulty
+        pub let difficulty: Difficulty
 
         init(
             id: UInt64,
             royalties: [MetadataViews.Royalty],
             metadata: {String: AnyStruct},
             kind: Kind, 
-            rarity: Difficulty,      
+            difficulty: Difficulty,      
         ){
             self.id = id
             self.royalties = royalties
             self.metadata = metadata
             self.kind = kind
-            self.rarity = rarity
+            self.difficulty = difficulty
         }
 
         pub fun getViews(): [Type] {
@@ -211,12 +211,12 @@ pub contract ArtWalk: NonFungibleToken {
                     let traitsView = MetadataViews.dictToTraits(dict: self.metadata, excludedNames: excludedTraits)
 
                     // mintedTime is a unix timestamp, we should mark it with a displayType so platforms know how to show it.
-                    let mintedTimeTrait = MetadataViews.Trait(name: "mintedTime", value: self.metadata["mintedTime"]!, displayType: "Date", rarity: nil)
+                    let mintedTimeTrait = MetadataViews.Trait(name: "mintedTime", value: self.metadata["mintedTime"]!, displayType: "Date", difficulty: nil)
                     traitsView.addTrait(mintedTimeTrait)
 
                     // foo is a trait with its own rarity
                     let fooTraitRarity = MetadataViews.Rarity(score: 10.0, max: 100.0, description: "Common")
-                    let fooTrait = MetadataViews.Trait(name: "foo", value: self.metadata["foo"], displayType: nil, rarity: fooTraitRarity)
+                    let fooTrait = MetadataViews.Trait(name: "foo", value: self.metadata["foo"], displayType: nil, difficulty: fooTraitRarity)
                     traitsView.addTrait(fooTrait)
                     
                     return traitsView
@@ -371,7 +371,7 @@ pub contract ArtWalk: NonFungibleToken {
             emit Minted(
                 id: ArtWalk.totalSupply,
                 kind: kind.rawValue,
-                rarity: difficulty.rawValue,
+                difficulty: difficulty.rawValue,
             )
 
             ArtWalk.totalSupply = ArtWalk.totalSupply + 1 
@@ -402,7 +402,7 @@ pub contract ArtWalk: NonFungibleToken {
             .getCapability(ArtWalk.CollectionPublicPath)!
             .borrow<&ArtWalk.Collection{ArtWalk.ArtWalkCollectionPublic}>()
             ?? panic("Couldn't get collection")
-        // We trust ArtWalk.Collection.borowArtWalk to get the correct itemID
+        // We trust ArtWalk.Collection.borowArtWalk to get the correct walkID
         // (it checks it before returning it).
         return collection.borrowArtWalk(id: walkID)
     }
@@ -410,8 +410,8 @@ pub contract ArtWalk: NonFungibleToken {
     // initializer
     //
     init() {
-        // set rarity price mapping
-        self.itemRarityPriceMap = {
+        // set difficulty price mapping
+        self.walkDifficultyPriceMap = {
             Difficulty.expert: 125.0,
             Difficulty.hard: 25.0,
             Difficulty.normal: 5.0,
