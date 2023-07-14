@@ -19,6 +19,23 @@ const account = await fcl.account("0x6223108937e32f96");
 // Get account at a specific block height
 //await fcl.send([fcl.getAccount("0x6223108937e32f96"), fcl.atBlockHeight(110617606)]).then(fcl.decode)
 
+// Or, create a custom authorization function
+const authzFn = async (txAccount) => {
+  return {
+    ...txAccount,
+    addr: "0x6223108937e32f96",
+    keyId: 0,
+    signingFunction: async(signable) => {
+      return {
+        addr: "0x6223108937e32f96",
+        keyId: 0,
+        signature
+      }
+    }
+  }
+}
+
+
 // authorizer is the sender
 await fcl.mutate({
   cadence: `
@@ -26,6 +43,11 @@ await fcl.mutate({
       prepare(acct: AuthAccount) {}
     }
   `,
-  //authz: fcl.currentUser, // Optional. Will default to currentUser if not provided.
+  /*
+  proposer: authzFn,
+  payer: authzFn,
+  authorizations: [authzFn],
+  */
+  authz: fcl.currentUser, // Optional. Will default to currentUser if not provided.
   limit: 50,
 })
