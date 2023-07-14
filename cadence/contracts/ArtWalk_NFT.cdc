@@ -3,11 +3,11 @@
 import NonFungibleToken from "./NonFungibleToken.cdc"
 import MetadataViews from "./MetadataViews.cdc"
 
-// stopped here
-pub contract KittyItems: NonFungibleToken {
+
+pub contract ArtWalk: NonFungibleToken {
 
     // totalSupply
-    // The total number of KittyItems that have been minted
+    // The total number of ArtWalks that have been minted
     //
     pub var totalSupply: UInt64
 
@@ -25,89 +25,89 @@ pub contract KittyItems: NonFungibleToken {
     pub let CollectionPublicPath: PublicPath
     pub let MinterStoragePath: StoragePath
 
-    pub enum Rarity: UInt8 {
-        pub case blue
-        pub case green
-        pub case purple
-        pub case gold
+    pub enum Difficulty: UInt8 {
+        pub case easy
+        pub case normal
+        pub case hard
+        pub case expert
     }
 
-    pub fun rarityToString(_ rarity: Rarity): String {
+    pub fun difficultyToString(_ rarity: Difficulty): String {
         switch rarity {
-            case Rarity.blue:
-                return "Blue"
-            case Rarity.green:
-                return "Green"
-            case Rarity.purple:
-                return "Purple"
-            case Rarity.gold:
-                return "Gold"
+            case Difficulty.easy:
+                return "Easy"
+            case Difficulty.normal:
+                return "Normal"
+            case Difficulty.hard:
+                return "Hard"
+            case Difficulty.expert:
+                return "Expert"
         }
 
         return ""
     }
 
     pub enum Kind: UInt8 {
-        pub case fishbowl
-        pub case fishhat
-        pub case milkshake
-        pub case tuktuk
-        pub case skateboard
+        pub case city
+        pub case park
+        pub case forest
+        pub case stadium
+        pub case inside
     }
 
     pub fun kindToString(_ kind: Kind): String {
         switch kind {
-            case Kind.fishbowl:
-                return "Fishbowl"
-            case Kind.fishhat:
-                return "Fish Hat"
-            case Kind.milkshake:
-                return "Milkshake"
-            case Kind.tuktuk:
-                return "Tuk-Tuk"
-            case Kind.skateboard:
-                return "Skateboard"
+            case Kind.city:
+                return "City"
+            case Kind.park:
+                return "Park"
+            case Kind.forest:
+                return "Forest"
+            case Kind.stadium:
+                return "Stadium"
+            case Kind.inside:
+                return "Inside"
         }
 
         return ""
     }
 
-    // Mapping from item (kind, rarity) -> IPFS image CID
+    // Mapping from item (kind, difficulty) -> IPFS image CID
     //
-    access(self) var images: {Kind: {Rarity: String}}
+    access(self) var images: {Kind: {Difficulty: String}}
 
-    // Mapping from rarity -> price
+    // Mapping from difficulty -> price
     //
-    access(self) var itemRarityPriceMap: {Rarity: UFix64}
+    access(self) var itemRarityPriceMap: {Difficulty: UFix64}
 
-    // Return the initial sale price for an item of this rarity.
+    // Return the initial sale price for an item of this difficulty.
     //
-    pub fun getItemPrice(rarity: Rarity): UFix64 {
+    pub fun getItemPrice(rarity: Difficulty): UFix64 {
         return self.itemRarityPriceMap[rarity]!
     }
     
-    // A Kitty Item as an NFT
+    // An ArtWalk as an NFT
     //
     pub resource NFT: NonFungibleToken.INFT, MetadataViews.Resolver {
         pub let id: UInt64
 
         pub fun name(): String {
-            return KittyItems.rarityToString(self.rarity)
+            return ArtWalk.difficultyToString(self.rarity)
                 .concat(" ")
-                .concat(KittyItems.kindToString(self.kind))
+                .concat(ArtWalk.kindToString(self.kind))
         }
         
         pub fun description(): String {
             return "A "
-                .concat(KittyItems.rarityToString(self.rarity).toLower())
+                .concat(ArtWalk.difficultyToString(self.rarity).toLower())
                 .concat(" ")
-                .concat(KittyItems.kindToString(self.kind).toLower())
+                .concat(ArtWalk.kindToString(self.kind).toLower())
                 .concat(" with serial number ")
                 .concat(self.id.toString())
         }
 
         pub fun imageCID(): String {
-            return KittyItems.images[self.kind]![self.rarity]!
+            return ArtWalk.images[self.kind]![self.rarity]!
         }
 
         pub fun thumbnail(): MetadataViews.IPFSFile {
@@ -117,18 +117,18 @@ pub contract KittyItems: NonFungibleToken {
         access(self) let royalties: [MetadataViews.Royalty]
         access(self) let metadata: {String: AnyStruct}
 
-        // The token kind (e.g. Fishbowl)
+        // The walk kind (e.g. Forest)
         pub let kind: Kind
 
-        // The token rarity (e.g. Gold)
-        pub let rarity: Rarity
+        // The walk difficulty (e.g. Normal)
+        pub let rarity: Difficulty
 
         init(
             id: UInt64,
             royalties: [MetadataViews.Royalty],
             metadata: {String: AnyStruct},
             kind: Kind, 
-            rarity: Rarity,      
+            rarity: Difficulty,      
         ){
             self.id = id
             self.royalties = royalties
@@ -161,7 +161,7 @@ pub contract KittyItems: NonFungibleToken {
                 case Type<MetadataViews.Editions>():
                     // There is no max number of NFTs that can be minted from this contract
                     // so the max edition field value is set to nil
-                    let editionInfo = MetadataViews.Edition(name: "KittyItems NFT Edition", number: self.id, max: nil)
+                    let editionInfo = MetadataViews.Edition(name: "ArtWalk NFT Edition", number: self.id, max: nil)
                     let editionList: [MetadataViews.Edition] = [editionInfo]
                     return MetadataViews.Editions(
                         editionList
@@ -178,14 +178,14 @@ pub contract KittyItems: NonFungibleToken {
                     return MetadataViews.ExternalURL("https://kitty-items.flow.com/".concat(self.id.toString()))
                 case Type<MetadataViews.NFTCollectionData>():
                     return MetadataViews.NFTCollectionData(
-                        storagePath: KittyItems.CollectionStoragePath,
-                        publicPath: KittyItems.CollectionPublicPath,
-                        providerPath: /private/KittyItemsCollection,
-                        publicCollection: Type<&KittyItems.Collection{KittyItems.KittyItemsCollectionPublic}>(),
-                        publicLinkedType: Type<&KittyItems.Collection{KittyItems.KittyItemsCollectionPublic,NonFungibleToken.CollectionPublic,NonFungibleToken.Receiver,MetadataViews.ResolverCollection}>(),
-                        providerLinkedType: Type<&KittyItems.Collection{KittyItems.KittyItemsCollectionPublic,NonFungibleToken.CollectionPublic,NonFungibleToken.Provider,MetadataViews.ResolverCollection}>(),
+                        storagePath: ArtWalk.CollectionStoragePath,
+                        publicPath: ArtWalk.CollectionPublicPath,
+                        providerPath: /private/ArtWalkCollection,
+                        publicCollection: Type<&ArtWalk.Collection{ArtWalk.ArtWalkCollectionPublic}>(),
+                        publicLinkedType: Type<&ArtWalk.Collection{ArtWalk.ArtWalkCollectionPublic,NonFungibleToken.CollectionPublic,NonFungibleToken.Receiver,MetadataViews.ResolverCollection}>(),
+                        providerLinkedType: Type<&ArtWalk.Collection{ArtWalk.ArtWalkCollectionPublic,NonFungibleToken.CollectionPublic,NonFungibleToken.Provider,MetadataViews.ResolverCollection}>(),
                         createEmptyCollectionFunction: (fun (): @NonFungibleToken.Collection {
-                            return <-KittyItems.createEmptyCollection()
+                            return <-ArtWalk.createEmptyCollection()
                         })
                     )
                 case Type<MetadataViews.NFTCollectionDisplay>():
@@ -196,18 +196,18 @@ pub contract KittyItems: NonFungibleToken {
                         mediaType: "image/svg+xml"
                     )
                     return MetadataViews.NFTCollectionDisplay(
-                        name: "The KittyItems Collection",
-                        description: "This collection is used as an example to help you develop your next Flow NFT.",
-                        externalURL: MetadataViews.ExternalURL("https://kitty-items.flow.com/"),
+                        name: "The ArtWalk Collection",
+                        description: "This collection is used as a part of ArtWalk Dapp to make physical activity funnier.",
+                        externalURL: MetadataViews.ExternalURL("https://github.com/gylman/artwalk"),
                         squareImage: media,
                         bannerImage: media,
                         socials: {
-                            "twitter": MetadataViews.ExternalURL("https://twitter.com/flow_blockchain")
+                            "twitter": MetadataViews.ExternalURL("https://github.com/gylman/artwalk")
                         }
                     )
                 case Type<MetadataViews.Traits>():
                     // exclude mintedTime and foo to show other uses of Traits
-                    let excludedTraits = ["mintedTime", "foo"]
+                    let excludedTraits = ["mintedTime","foo"]
                     let traitsView = MetadataViews.dictToTraits(dict: self.metadata, excludedNames: excludedTraits)
 
                     // mintedTime is a unix timestamp, we should mark it with a displayType so platforms know how to show it.
@@ -226,27 +226,27 @@ pub contract KittyItems: NonFungibleToken {
         }
     }
 
-    // This is the interface that users can cast their KittyItems Collection as
-    // to allow others to deposit KittyItems into their Collection. It also allows for reading
-    // the details of KittyItems in the Collection.
-    pub resource interface KittyItemsCollectionPublic {
+    // This is the interface that users can cast their ArtWalk Collection as
+    // to allow others to deposit ArtWalks into their Collection. It also allows for reading
+    // the details of ArtWalks in the Collection.
+    pub resource interface ArtWalkCollectionPublic {
         pub fun deposit(token: @NonFungibleToken.NFT)
         pub fun getIDs(): [UInt64]
         pub fun borrowNFT(id: UInt64): &NonFungibleToken.NFT
-        pub fun borrowKittyItem(id: UInt64): &KittyItems.NFT? {
+        pub fun borrowArtWalk(id: UInt64): &ArtWalk.NFT? {
             // If the result isn't nil, the id of the returned reference
             // should be the same as the argument to the function
             post {
                 (result == nil) || (result?.id == id):
-                    "Cannot borrow KittyItem reference: The ID of the returned reference is incorrect"
+                    "Cannot borrow ArtWalk reference: The ID of the returned reference is incorrect"
             }
         }
     }
 
     // Collection
-    // A collection of KittyItem NFTs owned by an account
+    // A collection of ArtWalk NFTs owned by an account
     //
-    pub resource Collection: KittyItemsCollectionPublic, NonFungibleToken.Provider, NonFungibleToken.Receiver, NonFungibleToken.CollectionPublic, MetadataViews.ResolverCollection {
+    pub resource Collection: ArtWalkCollectionPublic, NonFungibleToken.Provider, NonFungibleToken.Receiver, NonFungibleToken.CollectionPublic, MetadataViews.ResolverCollection {
         // dictionary of NFT conforming tokens
         // NFT is a resource type with an `UInt64` ID field
         //
@@ -272,7 +272,7 @@ pub contract KittyItems: NonFungibleToken {
         // takes a NFT and adds it to the collections dictionary
         // and adds the ID to the id array
         pub fun deposit(token: @NonFungibleToken.NFT) {
-            let token <- token as! @KittyItems.NFT
+            let token <- token as! @ArtWalk.NFT
 
             let id: UInt64 = token.id
 
@@ -297,16 +297,16 @@ pub contract KittyItems: NonFungibleToken {
             return (&self.ownedNFTs[id] as &NonFungibleToken.NFT?)!
         }
 
-        // borrowKittyItem
-        // Gets a reference to an NFT in the collection as a KittyItem,
-        // exposing all of its fields (including the typeID & rarityID).
-        // This is safe as there are no functions that can be called on the KittyItem.
+        // borrowArtWalks
+        // Gets a reference to an NFT in the collection as an ArtWalk,
+        // exposing all of its fields (including the typeID & difficultyID).
+        // This is safe as there are no functions that can be called on the ArtWalk.
         //
-        pub fun borrowKittyItem(id: UInt64): &KittyItems.NFT? {
+        pub fun borrowArtWalk(id: UInt64): &ArtWalk.NFT? {
             if self.ownedNFTs[id] != nil {
                 // Create an authorized reference to allow downcasting
                 let ref = (&self.ownedNFTs[id] as auth &NonFungibleToken.NFT?)!
-                return ref as! &KittyItems.NFT
+                return ref as! &ArtWalk.NFT
             } else {
                 return nil
             }    
@@ -314,8 +314,8 @@ pub contract KittyItems: NonFungibleToken {
 
         pub fun borrowViewResolver(id: UInt64): &AnyResource{MetadataViews.Resolver} {
             let nft = (&self.ownedNFTs[id] as auth &NonFungibleToken.NFT?)!
-            let kittyItem = nft as! &KittyItems.NFT
-            return kittyItem as &AnyResource{MetadataViews.Resolver}
+            let artWalk = nft as! &ArtWalk.NFT
+            return artWalk as &AnyResource{MetadataViews.Resolver}
         }
 
         // destructor
@@ -344,7 +344,7 @@ pub contract KittyItems: NonFungibleToken {
         pub fun mintNFT(
             recipient: &{NonFungibleToken.CollectionPublic}, 
             kind: Kind, 
-            rarity: Rarity,
+            difficulty: Difficulty,
             royalties: [MetadataViews.Royalty],
         ) {
             let metadata: {String: AnyStruct} = {}
@@ -353,35 +353,35 @@ pub contract KittyItems: NonFungibleToken {
             metadata["mintedTime"] = currentBlock.timestamp
             metadata["minter"] = recipient.owner!.address
 
-            // this piece of metadata will be used to show embedding rarity into a trait
+            // this piece of metadata will be used to show embedding difficulty into a trait
             // metadata["foo"] = "bar"
 
             // create a new NFT
-            var newNFT <- create KittyItems.NFT(
-                id: KittyItems.totalSupply,
+            var newNFT <- create ArtWalk.NFT(
+                id: ArtWalk.totalSupply,
                 royalties: royalties,
                 metadata: metadata,
                 kind: kind, 
-                rarity: rarity
+                difficulty: difficulty
             )
 
             // deposit it in the recipient's account using their reference
             recipient.deposit(token: <-newNFT)
 
             emit Minted(
-                id: KittyItems.totalSupply,
+                id: ArtWalk.totalSupply,
                 kind: kind.rawValue,
-                rarity: rarity.rawValue,
+                rarity: difficulty.rawValue,
             )
 
-            KittyItems.totalSupply = KittyItems.totalSupply + UInt64(1)
+            ArtWalk.totalSupply = ArtWalk.totalSupply + 1 
         }
 
         // Update NFT images for new type
-        pub fun addNewImagesForKind(from: AuthAccount, newImages: {Kind: {Rarity: String}}) {
-            let kindValue = KittyItems.images.containsKey(newImages.keys[0]) 
+        pub fun addNewImagesForKind(from: AuthAccount, newImages: {Kind: {Difficulty: String}}) {
+            let kindValue = ArtWalk.images.containsKey(newImages.keys[0]) 
             if(!kindValue) {
-                KittyItems.images.insert(key: newImages.keys[0], newImages.values[0])
+                ArtWalk.images.insert(key: newImages.keys[0], newImages.values[0])
                 emit ImagesAddedForNewKind(
                     kind: newImages.keys[0].rawValue,
                 )
@@ -392,19 +392,19 @@ pub contract KittyItems: NonFungibleToken {
     }
 
     // fetch
-    // Get a reference to a KittyItem from an account's Collection, if available.
-    // If an account does not have a KittyItems.Collection, panic.
-    // If it has a collection but does not contain the itemID, return nil.
-    // If it has a collection and that collection contains the itemID, return a reference to that.
+    // Get a reference to am ArtWalk from an account's Collection, if available.
+    // If an account does not have an ArtWalk.Collection, panic.
+    // If it has a collection but does not contain the walkID, return nil.
+    // If it has a collection and that collection contains the walkID, return a reference to that.
     //
-    pub fun fetch(_ from: Address, itemID: UInt64): &KittyItems.NFT? {
+    pub fun fetch(_ from: Address, walkID: UInt64): &ArtWalk.NFT? {
         let collection = getAccount(from)
-            .getCapability(KittyItems.CollectionPublicPath)!
-            .borrow<&KittyItems.Collection{KittyItems.KittyItemsCollectionPublic}>()
+            .getCapability(ArtWalk.CollectionPublicPath)!
+            .borrow<&ArtWalk.Collection{ArtWalk.ArtWalkCollectionPublic}>()
             ?? panic("Couldn't get collection")
-        // We trust KittyItems.Collection.borowKittyItem to get the correct itemID
+        // We trust ArtWalk.Collection.borowArtWalk to get the correct itemID
         // (it checks it before returning it).
-        return collection.borrowKittyItem(id: itemID)
+        return collection.borrowArtWalk(id: walkID)
     }
 
     // initializer
@@ -412,42 +412,42 @@ pub contract KittyItems: NonFungibleToken {
     init() {
         // set rarity price mapping
         self.itemRarityPriceMap = {
-            Rarity.gold: 125.0,
-            Rarity.purple: 25.0,
-            Rarity.green: 5.0,
-            Rarity.blue: 1.0
+            Difficulty.expert: 125.0,
+            Difficulty.hard: 25.0,
+            Difficulty.normal: 5.0,
+            Difficulty.easy: 1.0
         }
 
         self.images = {
-            Kind.fishbowl: {
-                Rarity.blue: "bafybeibuqzhuoj6ychlckjn6cgfb5zfurggs2x7pvvzjtdcmvizu2fg6ga",
-                Rarity.green: "bafybeihbminj62owneu3fjhtqm7ghs7q2rastna6srqtysqmjcsicmn7oa",
-                Rarity.purple: "bafybeiaoja3gyoot4f5yxs4b7tucgaoj3kutu7sxupacddxeibod5hkw7m",
-                Rarity.gold: "bafybeid73gt3qduwn2hhyy4wzhsvt6ahzmutiwosfd3f6t5el6yjqqxd3u"
+            Kind.city: {
+                Difficulty.easy: "bafybeibuqzhuoj6ychlckjn6cgfb5zfurggs2x7pvvzjtdcmvizu2fg6ga",
+                Difficulty.normal: "bafybeihbminj62owneu3fjhtqm7ghs7q2rastna6srqtysqmjcsicmn7oa",
+                Difficulty.hard: "bafybeiaoja3gyoot4f5yxs4b7tucgaoj3kutu7sxupacddxeibod5hkw7m",
+                Difficulty.expert: "bafybeid73gt3qduwn2hhyy4wzhsvt6ahzmutiwosfd3f6t5el6yjqqxd3u"
             },
-            Kind.fishhat: {
-                Rarity.blue: "bafybeigu4ihzm7ujgpjfn24zut6ldrn7buzwqem27ncqupdovm3uv4h4oy",
-                Rarity.green: "bafybeih6eaczohx3ibv22bh2fsdalc46qaqty6qapums6zhelxet2gfc24",
-                Rarity.purple: "bafybeifbhcez3v5dj5qgndrx73twqleajz7r2mog4exd7abs3aof7w3hhe",
-                Rarity.gold: "bafybeid2r5q3vfrsluv7iaelqobkihfopw5t4sv4z2llxsoe3xqfynl73u"
+            Kind.forest: {
+                Difficulty.easy: "bafybeibuqzhuoj6ychlckjn6cgfb5zfurggs2x7pvvzjtdcmvizu2fg6ga",
+                Difficulty.normal: "bafybeihbminj62owneu3fjhtqm7ghs7q2rastna6srqtysqmjcsicmn7oa",
+                Difficulty.hard: "bafybeiaoja3gyoot4f5yxs4b7tucgaoj3kutu7sxupacddxeibod5hkw7m",
+                Difficulty.expert: "bafybeid73gt3qduwn2hhyy4wzhsvt6ahzmutiwosfd3f6t5el6yjqqxd3u"
             },
-            Kind.milkshake: {
-                Rarity.blue: "bafybeialhf5ga6owaygebp6xt4vdybc7aowatrscwlwmxd444fvwyhcskq",
-                Rarity.green: "bafybeihjy4rcbvnw6bcz3zbirq5u454aagnyzjhlrffgkc25wgdcw4csoe",
-                Rarity.purple: "bafybeidbua4rigbcpwutpkqvd7spppvxemwn6o2ifhq6xam4sqlngzrfiq",
-                Rarity.gold: "bafybeigdrwjq4kge3bym2rbnek2olibdt5uvdbtnuwto36jb36cr3c4p5y"
+            Kind.park: {
+                Difficulty.easy: "bafybeibuqzhuoj6ychlckjn6cgfb5zfurggs2x7pvvzjtdcmvizu2fg6ga",
+                Difficulty.normal: "bafybeihbminj62owneu3fjhtqm7ghs7q2rastna6srqtysqmjcsicmn7oa",
+                Difficulty.hard: "bafybeiaoja3gyoot4f5yxs4b7tucgaoj3kutu7sxupacddxeibod5hkw7m",
+                Difficulty.expert: "bafybeid73gt3qduwn2hhyy4wzhsvt6ahzmutiwosfd3f6t5el6yjqqxd3u"
             },
-            Kind.tuktuk: {
-                Rarity.blue: "bafybeidjalsqnhj2jnisxucv6chlrfwtcrqyu2n6lpx3zpuuv2o3d3nwce",
-                Rarity.green: "bafybeiaeixpd4htnngycs7ebktdt6crztvhyiu2js4nwvuot35gzvszchi",
-                Rarity.purple: "bafybeihfcumxiobjullha23ov77wgd5cv5uqrebkik6y33ctr5tkt4eh2e",
-                Rarity.gold: "bafybeigdi6ableh5mvvrqdil233ucxip7cm3z4kpnpxhutfdncwhyl22my"
+            Kind.stadium: {
+                Difficulty.easy: "bafybeibuqzhuoj6ychlckjn6cgfb5zfurggs2x7pvvzjtdcmvizu2fg6ga",
+                Difficulty.normal: "bafybeihbminj62owneu3fjhtqm7ghs7q2rastna6srqtysqmjcsicmn7oa",
+                Difficulty.hard: "bafybeiaoja3gyoot4f5yxs4b7tucgaoj3kutu7sxupacddxeibod5hkw7m",
+                Difficulty.expert: "bafybeid73gt3qduwn2hhyy4wzhsvt6ahzmutiwosfd3f6t5el6yjqqxd3u"
             },
-            Kind.skateboard: {
-                Rarity.blue: "bafybeic55lpwfvucmgibbvaury3rpeoxmcgyqra3vdhjwp74wqzj6oqvpq",
-                Rarity.green: "bafybeic55lpwfvucmgibbvaury3rpeoxmcgyqra3vdhjwp74wqzj6oqvpq",
-                Rarity.purple: "bafybeiepqu75oknv2vertl5nbq7gqyac5tbpekqcfy73lyk2rcjgz7irpu",
-                Rarity.gold: "bafybeic5ehqovuhix4lyspxfawlegkrkp6aaloszyscmjvmjzsbxqm6s2i"
+            Kind.inside: {
+                Difficulty.easy: "bafybeibuqzhuoj6ychlckjn6cgfb5zfurggs2x7pvvzjtdcmvizu2fg6ga",
+                Difficulty.normal: "bafybeihbminj62owneu3fjhtqm7ghs7q2rastna6srqtysqmjcsicmn7oa",
+                Difficulty.hard: "bafybeiaoja3gyoot4f5yxs4b7tucgaoj3kutu7sxupacddxeibod5hkw7m",
+                Difficulty.expert: "bafybeid73gt3qduwn2hhyy4wzhsvt6ahzmutiwosfd3f6t5el6yjqqxd3u"
             }
         }
 
@@ -455,16 +455,16 @@ pub contract KittyItems: NonFungibleToken {
         self.totalSupply = 0
 
         // Set our named paths
-        self.CollectionStoragePath = /storage/kittyItemsCollectionV14
-        self.CollectionPublicPath = /public/kittyItemsCollectionV14
-        self.MinterStoragePath = /storage/kittyItemsMinterV14
+        self.CollectionStoragePath = /storage/artWalkCollectionV14
+        self.CollectionPublicPath = /public/artWalkCollectionV14
+        self.MinterStoragePath = /storage/artWalkMinterV14
 
         // Create a Collection resource and save it to storage
         let collection <- create Collection()
         self.account.save(<-collection, to: self.CollectionStoragePath)
 
         // Create a public capability for the collection
-        self.account.link<&KittyItems.Collection{NonFungibleToken.CollectionPublic, KittyItems.KittyItemsCollectionPublic, MetadataViews.ResolverCollection}>(
+        self.account.link<&ArtWalk.Collection{NonFungibleToken.CollectionPublic, ArtWalk.ArtWalkCollectionPublic, MetadataViews.ResolverCollection}>(
             self.CollectionPublicPath,
             target: self.CollectionStoragePath
         )
