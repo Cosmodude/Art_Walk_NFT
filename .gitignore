@@ -5,3 +5,4 @@ build
 *.gitkeep
 keys*
 Cosmodude.pkey
+connect-*
