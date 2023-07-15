@@ -2,7 +2,7 @@
 	"contracts": {
 		"Profile": {
 			"aliases": {
-				"testnet": ""
+				"testnet": "0x2cc4470edce05072"
 			}
 		},
 		"FlowToken": {
