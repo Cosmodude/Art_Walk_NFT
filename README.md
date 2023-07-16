@@ -73,6 +73,10 @@ You can already import certain common contracts we included for you, just make s
 - NFTStorefrontV2 `import "NFTStorefrontV2"`
 - NFTStorefront `import "NFTStorefront"`
 
+# Deployment:
+
+    flow project deploy --network testnet
+    flow accounts update-contract ArtWalk --network testnet --signer Cosmodude
 
 ### Further Reading
 

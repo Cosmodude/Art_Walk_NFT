@@ -2,7 +2,7 @@
 	"contracts": {
 		"Profile": {
 			"aliases": {
-				"testnet": ""
+				"testnet": "0x6223108937e32f96"
 			}
 		},
 		"FlowToken": {
@@ -46,8 +46,8 @@
 				"testnet": "0x6223108937e32f96"
 			}
 		},
-		"ArtWalk_NFT":{
-			"source": "./cadence/contracts/ArtWalk_NFT.cdc",
+		"ArtWalk":{
+			"source": "./cadence/contracts/ArtWalk.cdc",
 			"aliases": {
 				"testnet": "0x6223108937e32f96"
 			}
@@ -60,7 +60,7 @@
 	},
 	"accounts": {
 		"Cosmodude": {
-			"address": "6223108937e32f96",
+			"address": "0xa963b619092736ed",
 			"key": {
 				"type": "file",
 				"location": "Cosmodude.pkey"
@@ -75,11 +75,9 @@
 		"testnet": {
 			"Cosmodude": [
 				"NonFungibleToken",
-       	 		"ViewResolver",
-        		"MetadataViews",
         		"FungibleToken",
         		"NFTForwarding",
-				"ArtWalk_NFT"
+				"ArtWalk"
 			]
 		}
 	}
