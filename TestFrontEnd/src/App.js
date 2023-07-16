@@ -35,38 +35,9 @@ function App() {
         }
       `
       })
-      supply = res.totalSupply
+      supply = res
       console.log(res)
       setName('No Profile')
-    }
-  
-    // NEW
-    const initAccount = async () => {
-      const transactionId = await fcl.mutate({
-        cadence: `
-          import Profile from 0xProfile
-  
-          transaction {
-            prepare(account: AuthAccount) {
-              // Only initialize the account if it hasn't already been initialized
-              if (!Profile.check(account.address)) {
-                // This creates and stores the profile in the user's account
-                account.save(<- Profile.new(), to: Profile.privatePath)
-  
-                // This creates the public capability that lets applications read the profile's info
-                account.link<&Profile.Base{Profile.Public}>(Profile.publicPath, target: Profile.privatePath)
-              }
-            }
-          }
-        `,
-        payer: fcl.authz,
-        proposer: fcl.authz,
-        authorizations: [fcl.authz],
-        limit: 50
-      })
-  
-      const transaction = await fcl.tx(transactionId).onceSealed()
-      console.log(transaction)
     }
 
     const executeTransaction = async () => {
@@ -80,7 +51,7 @@ function App() {
       })
     
       const tx = await fcl.tx(transactionId).subscribe(res => setTransactionStatus(res.status))
-      console.log(tx)
+      console.log(await tx)
     }
 
     const AuthedState = () => {
@@ -91,7 +62,6 @@ function App() {
           <div>Supply: {supply}</div>
           <div>Transaction Status: {transactionStatus ?? "--"}</div> 
           <button onClick={sendQuery}>Send Query</button>
-          <button onClick={initAccount}>Init Account</button> 
           <button onClick={fcl.unauthenticate}>Log Out</button>
           <button onClick={executeTransaction}>Mint</button>
         </div>
