@@ -1,10 +1,5 @@
 {
 	"contracts": {
-		"Profile": {
-			"aliases": {
-				"testnet": "0x6223108937e32f96"
-			}
-		},
 		"FlowToken": {
 			"source": "",
 			"aliases": {
@@ -18,26 +13,12 @@
 				"testnet": "0x6223108937e32f96"
 			}
 		},
-		"MetadataViews": {
-			"source": "./cadence/contracts/MetadataViews.cdc",
-			"aliases": {
-				"emulator": "f8d6e0586b0a20c7",
-				"testnet": "0x6223108937e32f96"
-			}
-		},
 		"NonFungibleToken": {
 			"source": "./cadence/contracts/NonFungibleToken.cdc",
 			"aliases": {
 			  "emulator": "0xf8d6e0586b0a20c7",
 			  "testnet": "0x6223108937e32f96",
 			  "mainnet": "0x1d7e57aa55817448"
-			}
-		},
-		"InterfaceNFT": "./cadence/contracts/INFT.cdc",
-		"ViewResolver": {
-			"source": "./cadence/contracts/ViewResolver.cdc",
-			"aliases": {
-				"testnet": "0x6223108937e32f96"
 			}
 		},
 		"NFTForwarding": {
