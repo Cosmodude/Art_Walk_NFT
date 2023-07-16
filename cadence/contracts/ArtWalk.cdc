@@ -125,6 +125,7 @@ pub contract ArtWalk: NonFungibleToken {
             let nft = (&self.ownedNFTs[id] as auth &NonFungibleToken.NFT?)!
             return nft as! &NFT
         }
+
         destroy() {
             destroy self.ownedNFTs
         }
