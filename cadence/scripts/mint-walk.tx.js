@@ -1,5 +1,5 @@
 export const MINT_ARTWALK = `
-  import ArtWalk from 0xArtWalk
+  import ArtWalk from 0x6223108937e32f96
   import FUSD from 0xFUSD
   import FungibleToken from 0xFungibleToken
 
