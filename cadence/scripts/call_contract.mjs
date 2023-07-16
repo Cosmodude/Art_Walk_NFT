@@ -1,6 +1,7 @@
 import * as fcl from "@onflow/fcl"
 import {config} from "@onflow/fcl"
 import { useState, useEffect } from "react"
+import MINT_ARTWALK from "../transactions/mint.tx"
 
 config({
     "accessNode.api": "https://rest-testnet.onflow.org",
@@ -9,20 +10,6 @@ config({
     "app.detail.title": "ArtWalk"
 })
 
-// Get latest block
-const latestBlock = await fcl
-.send([
-  fcl.getBlock(true), // isSealed = true
-])
-.then(fcl.decode);
-
-console.log(latestBlock)
-// Get account from latest block height
-const account = await fcl.account("0x6223108937e32f96");
-//console.log(account)
-// Get account at a specific block height
-//await fcl.send([fcl.getAccount("0x6223108937e32f96"), fcl.atBlockHeight(110617606)]).then(fcl.decode)
-
 export default function Home() {
 
   const [user, setUser] = useState({loggedIn: null})
@@ -30,58 +17,27 @@ export default function Home() {
 
   useEffect(() => fcl.currentUser.subscribe(setUser), [])
 
-  const sendQuery = async () => {
-    const profile = await fcl.query({
-      cadence: `
-        import Profile from 0xProfile
-
-        pub fun main(address: Address): Profile.ReadOnly? {
-          return Profile.read(address)
-        }
-      `,
-      args: (arg, t) => [arg(user.addr, t.Address)]
-    })
-
-    setName(profile?.name ?? 'No Profile')
-  }
-
-  // NEW
-  const initAccount = async () => {
+  const executeTransaction = async () => {
     const transactionId = await fcl.mutate({
-      cadence: `
-        import Profile from 0xProfile
-
-        transaction {
-          prepare(account: AuthAccount) {
-            // Only initialize the account if it hasn't already been initialized
-            if (!Profile.check(account.address)) {
-              // This creates and stores the profile in the user's account
-              account.save(<- Profile.new(), to: Profile.privatePath)
-
-              // This creates the public capability that lets applications read the profile's info
-              account.link<&Profile.Base{Profile.Public}>(Profile.publicPath, target: Profile.privatePath)
-            }
-          }
-        }
-      `,
+      cadence: MINT_ARTWALK,
+      args: (arg, t) => [arg("image", t.String),arg("Square", t.String)],
       payer: fcl.authz,
       proposer: fcl.authz,
       authorizations: [fcl.authz],
       limit: 50
     })
-
-    const transaction = await fcl.tx(transactionId).onceSealed()
-    console.log(transaction)
+  
+    fcl.tx(transactionId).subscribe(res => setTransactionStatus(res.status))
   }
+
+  
 
   const AuthedState = () => {
     return (
       <div>
         <div>Address: {user?.addr ?? "No Address"}</div>
         <div>Profile Name: {name ?? "--"}</div>
-        <button onClick={sendQuery}>Send Query</button>
-        <button onClick={initAccount}>Init Account</button> {/* NEW */}
-        <button onClick={fcl.unauthenticate}>Log Out</button>
+        <button onClick={executeTransaction}>Mint</button>
       </div>
     )
   }
