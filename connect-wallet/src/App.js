@@ -18,22 +18,26 @@ function App() {
     const [user, setUser] = useState({loggedIn: null})
     const [name, setName] = useState('')
     const [transactionStatus, setTransactionStatus] = useState(null)
+    let supply = -1;
   
     useEffect(() => fcl.currentUser.subscribe(setUser), [])
   
     const sendQuery = async () => {
-      const profile = await fcl.query({
+      const res = await fcl.query({
         cadence: `
-        mport ArtWalk from 0xa963b619092736ed
-  
-          pub fun main(): Int? {
-            return ArtWalk.totalSupply
-          }
-        `,
-        args: (arg, t) => [arg(user.addr, t.Address)]
+        import ArtWalk from 0xa963b619092736ed
+        
+        pub fun main(): UInt64 {
+        
+          let totalSupply = ArtWalk.totalSupply
+           
+          return totalSupply
+        }
+      `
       })
-  
-      setName(profile?.name ?? 'No Profile')
+      supply = res.totalSupply
+      console.log(res)
+      setName('No Profile')
     }
   
     // NEW
@@ -75,7 +79,8 @@ function App() {
         limit: 50
       })
     
-      fcl.tx(transactionId).subscribe(res => setTransactionStatus(res.status))
+      const tx = await fcl.tx(transactionId).subscribe(res => setTransactionStatus(res.status))
+      console.log(tx)
     }
 
     const AuthedState = () => {
@@ -83,6 +88,7 @@ function App() {
         <div>
           <div>Address: {user?.addr ?? "No Address"}</div>
           <div>Profile Name: {name ?? "--"}</div>
+          <div>Supply: {supply}</div>
           <div>Transaction Status: {transactionStatus ?? "--"}</div> 
           <button onClick={sendQuery}>Send Query</button>
           <button onClick={initAccount}>Init Account</button> 
