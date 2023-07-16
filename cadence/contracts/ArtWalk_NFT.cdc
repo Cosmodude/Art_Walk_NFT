@@ -1,8 +1,7 @@
 // https://github.com/onflow/flow-nft/blob/master/contracts/ExampleNFT.cdc
+// https://www.youtube.com/watch?v=GVz0M4bavWs&ab_channel=JacobTucker
 
 import NonFungibleToken from "NonFungibleToken"
-import MetadataViews from "MetadataViews"
-import ViewResolver from "ViewResolver"
 
 pub contract ArtWalk: NonFungibleToken {
 
@@ -27,142 +26,31 @@ pub contract ArtWalk: NonFungibleToken {
     /// New instances will be created using the NFTMinter resource
     /// and stored in the Collection resource
     ///
-    pub resource NFT: NonFungibleToken.INFT, MetadataViews.Resolver {
+    pub resource NFT: NonFungibleToken.INFT {
 
         /// The unique ID that each NFT has
         pub let id: UInt64
 
         /// Metadata fields
         pub let name: String
-        pub let description: String
-        pub let thumbnail: String
-        access(self) let royalties: [MetadataViews.Royalty]
-        access(self) let metadata: {String: AnyStruct}
+        pub let image: String
 
-        init(
-            name: String,
-            description: String,
-            thumbnail: String,
-            royalties: [MetadataViews.Royalty],
-            metadata: {String: AnyStruct},
-        ) {
+        init(_name: String, _image: String) {
             self.id = ArtWalk.totalSupply
             ArtWalk.totalSupply = ArtWalk.totalSupply + 1
-            self.name = name
-            self.description = description
-            self.thumbnail = thumbnail
-            self.royalties = royalties
-            self.metadata = metadata
+            self.name = _name   
+            self.image = _image
         }
 
-        /// Function that returns all the Metadata Views implemented by a Non Fungible Token
-        ///
-        /// @return An array of Types defining the implemented views. This value will be used by
-        ///         developers to know which parameter to pass to the resolveView() method.
-        ///
-        pub fun getViews(): [Type] {
-            return [
-                Type<MetadataViews.Display>(),
-                Type<MetadataViews.Royalties>(),
-                Type<MetadataViews.Editions>(),
-                Type<MetadataViews.ExternalURL>(),
-                Type<MetadataViews.NFTCollectionData>(),
-                Type<MetadataViews.NFTCollectionDisplay>(),
-                Type<MetadataViews.Serial>(),
-                Type<MetadataViews.Traits>()
-            ]
-        }
-
-        /// Function that resolves a metadata view for this token.
-        ///
-        /// @param view: The Type of the desired view.
-        /// @return A structure representing the requested view.
-        ///
-        pub fun resolveView(_ view: Type): AnyStruct? {
-            switch view {
-                case Type<MetadataViews.Display>():
-                    return MetadataViews.Display(
-                        name: self.name,
-                        description: self.description,
-                        thumbnail: MetadataViews.HTTPFile(
-                            url: self.thumbnail
-                        )
-                    )
-                case Type<MetadataViews.Editions>():
-                    // There is no max number of NFTs that can be minted from this contract
-                    // so the max edition field value is set to nil
-                    let editionInfo = MetadataViews.Edition(name: "ArtWalk NFT Edition", number: self.id, max: nil)
-                    let editionList: [MetadataViews.Edition] = [editionInfo]
-                    return MetadataViews.Editions(
-                        editionList
-                    )
-                case Type<MetadataViews.Serial>():
-                    return MetadataViews.Serial(
-                        self.id
-                    )
-                case Type<MetadataViews.Royalties>():
-                    return MetadataViews.Royalties(
-                        self.royalties
-                    )
-                case Type<MetadataViews.ExternalURL>():
-                    return MetadataViews.ExternalURL("https://example-nft.onflow.org/".concat(self.id.toString()))
-                case Type<MetadataViews.NFTCollectionData>():
-                    return MetadataViews.NFTCollectionData(
-                        storagePath: ArtWalk.CollectionStoragePath,
-                        publicPath: ArtWalk.CollectionPublicPath,
-                        providerPath: /private/artWalkNFTCollection,
-                        publicCollection: Type<&ArtWalk.Collection{ArtWalk.ArtWalkNFTCollectionPublic}>(),
-                        publicLinkedType: Type<&ArtWalk.Collection{ArtWalk.ArtWalkNFTCollectionPublic,NonFungibleToken.CollectionPublic,NonFungibleToken.Receiver,MetadataViews.ResolverCollection}>(),
-                        providerLinkedType: Type<&ArtWalk.Collection{ArtWalk.ArtWalkNFTCollectionPublic,NonFungibleToken.CollectionPublic,NonFungibleToken.Provider,MetadataViews.ResolverCollection}>(),
-                        createEmptyCollectionFunction: (fun (): @NonFungibleToken.Collection {
-                            return <-ArtWalk.createEmptyCollection()
-                        })
-                    )
-                case Type<MetadataViews.NFTCollectionDisplay>():
-                    let media = MetadataViews.Media(
-                        file: MetadataViews.HTTPFile(
-                            url: "https://assets.website-files.com/5f6294c0c7a8cdd643b1c820/5f6294c0c7a8cda55cb1c936_Flow_Wordmark.svg"
-                        ),
-                        mediaType: "image/svg+xml"
-                    )
-                    return MetadataViews.NFTCollectionDisplay(
-                        name: "The ArtWalk Collection",
-                        description: "This collection is used as a part of ArtWalk Dapp to make physical activity funnier.",
-                        externalURL: MetadataViews.ExternalURL("https://example-nft.onflow.org"),
-                        squareImage: media,
-                        bannerImage: media,
-                        socials: {
-                            "twitter": MetadataViews.ExternalURL("https://twitter.com/flow_blockchain")
-                        }
-                    )
-                case Type<MetadataViews.Traits>():
-                    // exclude mintedTime and foo to show other uses of Traits
-                    let excludedTraits = ["mintedTime", "foo"]
-                    let traitsView = MetadataViews.dictToTraits(dict: self.metadata, excludedNames: excludedTraits)
-
-                    // mintedTime is a unix timestamp, we should mark it with a displayType so platforms know how to show it.
-                    let mintedTimeTrait = MetadataViews.Trait(name: "mintedTime", value: self.metadata["mintedTime"]!, displayType: "Date", rarity: nil)
-                    traitsView.addTrait(mintedTimeTrait)
-
-                    // foo is a trait with its own rarity
-                    let fooTraitRarity = MetadataViews.Rarity(score: 10.0, max: 100.0, description: "Common")
-                    let fooTrait = MetadataViews.Trait(name: "foo", value: self.metadata["foo"], displayType: nil, rarity: fooTraitRarity)
-                    traitsView.addTrait(fooTrait)
-
-                    return traitsView
-
-            }
-            return nil
-        }
     }
 
     /// Defines the methods that are particular to this NFT contract collection
     ///
-    pub resource interface ArtWalkNFTCollectionPublic {
+    pub resource interface CollectionPublic {
         pub fun deposit(token: @NonFungibleToken.NFT)
         pub fun getIDs(): [UInt64]
         pub fun borrowNFT(id: UInt64): &NonFungibleToken.NFT
-        pub fun borrowArtWalkNFT(id: UInt64): &ArtWalk.NFT? {
+        pub fun borrowEntireNFT(id: UInt64): &NFT? {
             post {
                 (result == nil) || (result?.id == id):
                     "Cannot borrow ArtWalkNFT reference: the ID of the returned reference is incorrect"
@@ -174,7 +62,7 @@ pub contract ArtWalk: NonFungibleToken {
     /// In order to be able to manage NFTs any account will need to create
     /// an empty collection first
     ///
-    pub resource Collection: ArtWalkNFTCollectionPublic, NonFungibleToken.Provider, NonFungibleToken.Receiver, NonFungibleToken.CollectionPublic, MetadataViews.ResolverCollection {
+    pub resource Collection: CollectionPublic, NonFungibleToken.Provider, NonFungibleToken.Receiver, NonFungibleToken.CollectionPublic {
         // dictionary of NFT conforming tokens
         // NFT is a resource type with an `UInt64` ID field
         pub var ownedNFTs: @{UInt64: NonFungibleToken.NFT}
@@ -203,14 +91,9 @@ pub contract ArtWalk: NonFungibleToken {
         pub fun deposit(token: @NonFungibleToken.NFT) {
             let token <- token as! @ArtWalk.NFT
 
-            let id: UInt64 = token.id
-
+            emit Deposit(id: token.id, to: self.owner?.address)
             // add the new token to the dictionary which removes the old one
-            let oldToken <- self.ownedNFTs[id] <- token
-
-            emit Deposit(id: id, to: self.owner?.address)
-
-            destroy oldToken
+            self.ownedNFTs[token.id] <-! token
         }
 
         /// Helper method for getting the collection IDs
@@ -231,35 +114,17 @@ pub contract ArtWalk: NonFungibleToken {
             return (&self.ownedNFTs[id] as &NonFungibleToken.NFT?)!
         }
 
-        /// Gets a reference to an NFT in the collection so that
-        /// the caller can read its metadata and call its methods
-        ///
-        /// @param id: The ID of the wanted NFT
-        /// @return A reference to the wanted NFT resource
-        ///
-        pub fun borrowArtWalkNFT(id: UInt64): &ArtWalk.NFT? {
-            if self.ownedNFTs[id] != nil {
-                // Create an authorized reference to allow downcasting
-                let ref = (&self.ownedNFTs[id] as auth &NonFungibleToken.NFT?)!
-                return ref as! &ArtWalk.NFT
-            }
-
-            return nil
-        }
-
-        /// Gets a reference to the NFT only conforming to the `{MetadataViews.Resolver}`
+        /// Gets a reference to the whole NFT 
         /// interface so that the caller can retrieve the views that the NFT
         /// is implementing and resolve them
         ///
         /// @param id: The ID of the wanted NFT
         /// @return The resource reference conforming to the Resolver interface
         ///
-        pub fun borrowViewResolver(id: UInt64): &AnyResource{MetadataViews.Resolver} {
+        pub fun borrowEntireNFT(id: UInt64): &NFT {
             let nft = (&self.ownedNFTs[id] as auth &NonFungibleToken.NFT?)!
-            let ArtWalkNFT = nft as! &ArtWalk.NFT
-            return ArtWalkNFT as &AnyResource{MetadataViews.Resolver}
+            return nft as! &NFT
         }
-
         destroy() {
             destroy self.ownedNFTs
         }
@@ -272,104 +137,9 @@ pub contract ArtWalk: NonFungibleToken {
     pub fun createEmptyCollection(): @NonFungibleToken.Collection {
         return <- create Collection()
     }
-
-    /// Resource that an admin or something similar would own to be
-    /// able to mint new NFTs
-    ///
-    pub resource NFTMinter {
-
-        /// Mints a new NFT with a new ID and deposit it in the
-        /// recipients collection using their collection reference
-        ///
-        /// @param recipient: A capability to the collection where the new NFT will be deposited
-        /// @param name: The name for the NFT metadata
-        /// @param description: The description for the NFT metadata
-        /// @param thumbnail: The thumbnail for the NFT metadata
-        /// @param royalties: An array of Royalty structs, see MetadataViews docs
-        ///
-        pub fun mintNFT(
-            recipient: &{NonFungibleToken.CollectionPublic},
-            name: String,
-            description: String,
-            thumbnail: String,
-            royalties: [MetadataViews.Royalty]
-        ) {
-            let metadata: {String: AnyStruct} = {}
-            let currentBlock = getCurrentBlock()
-            metadata["mintedBlock"] = currentBlock.height
-            metadata["mintedTime"] = currentBlock.timestamp
-            metadata["minter"] = recipient.owner!.address
-
-            // this piece of metadata will be used to show embedding rarity into a trait
-            metadata["foo"] = "bar"
-
-            // create a new NFT
-            var newNFT <- create NFT(
-                id: ArtWalk.totalSupply,
-                name: name,
-                description: description,
-                thumbnail: thumbnail,
-                royalties: royalties,
-                metadata: metadata,
-            )
-
-            // deposit it in the recipient's account using their reference
-            recipient.deposit(token: <-newNFT)
-
-            ArtWalk.totalSupply = ArtWalk.totalSupply + UInt64(1)
-        }
-    }
-
-    /// Function that resolves a metadata view for this contract.
-    ///
-    /// @param view: The Type of the desired view.
-    /// @return A structure representing the requested view.
-    ///
-    pub fun resolveView(_ view: Type): AnyStruct? {
-        switch view {
-            case Type<MetadataViews.NFTCollectionData>():
-                return MetadataViews.NFTCollectionData(
-                    storagePath: ArtWalk.CollectionStoragePath,
-                    publicPath: ArtWalk.CollectionPublicPath,
-                    providerPath: /private/ArtWalkNFTCollection,
-                    publicCollection: Type<&ArtWalk.Collection{ArtWalk.ArtWalkNFTCollectionPublic}>(),
-                    publicLinkedType: Type<&ArtWalk.Collection{ArtWalk.ArtWalkNFTCollectionPublic,NonFungibleToken.CollectionPublic,NonFungibleToken.Receiver,MetadataViews.ResolverCollection}>(),
-                    providerLinkedType: Type<&ArtWalk.Collection{ArtWalk.ArtWalkNFTCollectionPublic,NonFungibleToken.CollectionPublic,NonFungibleToken.Provider,MetadataViews.ResolverCollection}>(),
-                    createEmptyCollectionFunction: (fun (): @NonFungibleToken.Collection {
-                        return <-ArtWalk.createEmptyCollection()
-                    })
-                )
-            case Type<MetadataViews.NFTCollectionDisplay>():
-                let media = MetadataViews.Media(
-                    file: MetadataViews.HTTPFile(
-                        url: "https://assets.website-files.com/5f6294c0c7a8cdd643b1c820/5f6294c0c7a8cda55cb1c936_Flow_Wordmark.svg"
-                    ),
-                    mediaType: "image/svg+xml"
-                )
-                return MetadataViews.NFTCollectionDisplay(
-                    name: "The ArtWalk Collection",
-                    description: "This collection is used as a part of ArtWalk Dapp to make physical activity funnier.",
-                    externalURL: MetadataViews.ExternalURL("https://example-nft.onflow.org"),
-                    squareImage: media,
-                    bannerImage: media,
-                    socials: {
-                        "twitter": MetadataViews.ExternalURL("https://twitter.com/flow_blockchain")
-                    }
-                )
-        }
-        return nil
-    }
-
-    /// Function that returns all the Metadata Views implemented by a Non Fungible Token
-    ///
-    /// @return An array of Types defining the implemented views. This value will be used by
-    ///         developers to know which parameter to pass to the resolveView() method.
-    ///
-    pub fun getViews(): [Type] {
-        return [
-            Type<MetadataViews.NFTCollectionData>(),
-            Type<MetadataViews.NFTCollectionDisplay>()
-        ]
+    
+    pub fun mintNFT(image: String, name: String): @NFT{
+        return <- create NFT(_name: name, _image: image)
     }
 
     init() {
@@ -377,23 +147,20 @@ pub contract ArtWalk: NonFungibleToken {
         self.totalSupply = 0
 
         // Set the named paths
-        self.CollectionStoragePath = /storage/ArtWalkNFTCollectionStorage
-        self.CollectionPublicPath = /public/ArtWalkNFTCollectionPublic
-        self.MinterStoragePath = /storage/ArtWalkNFTCollectionMinter
+        self.CollectionStoragePath = /storage/ArtWalkCollectionStorage
+        self.CollectionPublicPath = /public/ArtWalkCollectionPublic
+        self.MinterStoragePath = /storage/ArtWalkCollectionMinter
 
         // Create a Collection resource and save it to storage
         let collection <- create Collection()
         self.account.save(<-collection, to: self.CollectionStoragePath)
 
         // create a public capability for the collection
-        self.account.link<&ArtWalk.Collection{NonFungibleToken.CollectionPublic, ArtWalk.ArtWalkNFTCollectionPublic, MetadataViews.ResolverCollection}>(
+        self.account.link<&ArtWalk.Collection{NonFungibleToken.CollectionPublic, ArtWalk.CollectionPublic}>(
             self.CollectionPublicPath,
             target: self.CollectionStoragePath
         )
 
-        // Create a Minter resource and save it to storage
-        let minter <- create NFTMinter()
-        self.account.save(<-minter, to: self.MinterStoragePath)
 
         emit ContractInitialized()
     }
