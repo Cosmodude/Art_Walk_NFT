@@ -4,7 +4,7 @@ import NonFungibleToken from "NonFungibleToken"
 import MetadataViews from "MetadataViews"
 import ViewResolver from "ViewResolver"
 
-pub contract ArtWalk: NonFungibleToken, ViewResolver {
+pub contract ArtWalk: NonFungibleToken {
 
     /// Total supply of ArtWalkNFTs in existence
     pub var totalSupply: UInt64
@@ -40,14 +40,14 @@ pub contract ArtWalk: NonFungibleToken, ViewResolver {
         access(self) let metadata: {String: AnyStruct}
 
         init(
-            id: UInt64,
             name: String,
             description: String,
             thumbnail: String,
             royalties: [MetadataViews.Royalty],
             metadata: {String: AnyStruct},
         ) {
-            self.id = id
+            self.id = ArtWalk.totalSupply
+            ArtWalk.totalSupply = ArtWalk.totalSupply + 1
             self.name = name
             self.description = description
             self.thumbnail = thumbnail
